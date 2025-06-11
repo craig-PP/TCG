@@ -1,0 +1,209 @@
+.card {
+  width: 160px;
+  height: 220px;
+  border-radius: 12px;
+  border: 2px solid #3a3a3a;
+  background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  margin: 4px;
+  font-family: 'Georgia', serif;
+  color: #e0e0e0;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+.card.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.card.disabled:hover {
+  transform: none;
+}
+
+.card.can-attack {
+  border-color: #ff4444;
+  box-shadow: 0 4px 8px rgba(255, 68, 68, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+.card.can-attack:hover {
+  box-shadow: 0 8px 16px rgba(255, 68, 68, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+/* Card Types */
+.card-creature {
+  border-color: #8B4513;
+  background: linear-gradient(145deg, #3a2818, #2a1f10);
+}
+
+.card-spell {
+  border-color: #4B0082;
+  background: linear-gradient(145deg, #2a1a3a, #1a0f2a);
+}
+
+.card-energy {
+  border-color: #228B22;
+  background: linear-gradient(145deg, #1a3a1a, #0f2a0f);
+}
+
+/* Rarity */
+.card-common {
+  border-width: 2px;
+}
+
+.card-uncommon {
+  border-width: 3px;
+  border-color: #C0C0C0;
+}
+
+.card-rare {
+  border-width: 3px;
+  border-color: #FFD700;
+  background: linear-gradient(145deg, #3a3a1a, #2a2a0f);
+}
+
+/* Card Elements */
+.card-cost {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  max-width: 60px;
+}
+
+.card-cost span {
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  border: 1px solid #666;
+}
+
+.cost-shadow { color: #9370DB; border-color: #9370DB; }
+.cost-blood { color: #DC143C; border-color: #DC143C; }
+.cost-bone { color: #F5F5DC; border-color: #F5F5DC; }
+.cost-spirit { color: #87CEEB; border-color: #87CEEB; }
+
+.card-header {
+  margin-bottom: 8px;
+}
+
+.card-name {
+  font-size: 12px;
+  font-weight: bold;
+  margin: 0;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  line-height: 1.2;
+}
+
+.card-type {
+  font-size: 9px;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.card-body {
+  flex-grow: 1;
+  font-size: 9px;
+  line-height: 1.3;
+}
+
+.card-description {
+  margin: 0 0 6px 0;
+  font-style: italic;
+  opacity: 0.9;
+}
+
+.card-abilities {
+  margin-top: 4px;
+}
+
+.ability {
+  background: rgba(0, 0, 0, 0.4);
+  border-left: 2px solid #666;
+  padding: 2px 4px;
+  margin: 2px 0;
+  font-size: 8px;
+  line-height: 1.2;
+  border-radius: 2px;
+}
+
+.card-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-top: 4px;
+  font-weight: bold;
+}
+
+.attack {
+  color: #ff6b6b;
+  font-size: 12px;
+}
+
+.health {
+  color: #51cf66;
+  font-size: 12px;
+}
+
+.energy-type {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  font-size: 18px;
+  opacity: 0.8;
+}
+
+/* Hand and Battlefield specific styles */
+.card.in-hand:hover {
+  transform: translateY(-8px) scale(1.05);
+}
+
+.card.on-battlefield {
+  margin: 6px;
+}
+
+.card.on-battlefield:hover {
+  transform: scale(1.05);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card {
+    width: 120px;
+    height: 160px;
+    padding: 6px;
+  }
+  
+  .card-name {
+    font-size: 10px;
+  }
+  
+  .card-body {
+    font-size: 8px;
+  }
+  
+  .ability {
+    font-size: 7px;
+  }
+}
