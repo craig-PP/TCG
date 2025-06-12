@@ -8,6 +8,7 @@ function GameBoard() {
   const [gameState, setGameState] = useState(createGameState());
   const [selectedCard, setSelectedCard] = useState(null);
   const [targetingMode, setTargetingMode] = useState(false);
+  const [attackingCreature, setAttackingCreature] = useState(null);
   const [validTargets, setValidTargets] = useState([]);
   const [message, setMessage] = useState('');
   const [showHelp, setShowHelp] = useState(true);
@@ -20,25 +21,54 @@ function GameBoard() {
     setTimeout(() => setMessage(''), 3000);
   };
 
+  const resetSelection = () => {
+    setTargetingMode(false);
+    setSelectedCard(null);
+    setAttackingCreature(null);
+    setValidTargets([]);
+  };
+
   const handleCardClick = (cardId, instanceId) => {
     if (gameState.gameOver) return;
 
-    // If in targeting mode, try to target
-    if (targetingMode && selectedCard) {
-      const targetId = instanceId || `player_${gameState.currentPlayer === 1 ? 2 : 1}`;
-      const result = playCard(gameState, gameState.currentPlayer, selectedCard, targetId);
+    // If we're in attack mode and clicking a valid target
+    if (attackingCreature) {
+      const targetId = instanceId || `player_${opponent.id}`;
+      const isValidTarget = validTargets.some(t => t.id === targetId);
       
-      if (result.success) {
-        setGameState({...gameState});
-        showMessage(`Played ${CARDS[selectedCard].name}`);
-      } else {
-        showMessage(result.error);
+      if (isValidTarget) {
+        const result = attackWithCreature(gameState, attackingCreature, targetId);
+        
+        if (result.success) {
+          setGameState({...gameState});
+          showMessage('Attack successful!');
+        } else {
+          showMessage(result.error);
+        }
+        
+        resetSelection();
+        return;
       }
+    }
+
+    // If in spell targeting mode
+    if (targetingMode && selectedCard && !attackingCreature) {
+      const targetId = instanceId || `player_${opponent.id}`;
+      const isValidTarget = validTargets.some(t => t.id === targetId);
       
-      setTargetingMode(false);
-      setSelectedCard(null);
-      setValidTargets([]);
-      return;
+      if (isValidTarget) {
+        const result = playCard(gameState, gameState.currentPlayer, selectedCard, targetId);
+        
+        if (result.success) {
+          setGameState({...gameState});
+          showMessage(`Played ${CARDS[selectedCard].name}`);
+        } else {
+          showMessage(result.error);
+        }
+        
+        resetSelection();
+        return;
+      }
     }
 
     // If clicking on a card in hand
@@ -74,8 +104,7 @@ function GameBoard() {
     if (instanceId && currentPlayer.battlefield.some(c => c.instanceId === instanceId)) {
       const creature = currentPlayer.battlefield.find(c => c.instanceId === instanceId);
       if (creature && creature.canAttack) {
-        setSelectedCard(instanceId);
-        setTargetingMode(true);
+        setAttackingCreature(instanceId);
         // Valid attack targets: opponent creatures + opponent player
         const attackTargets = [
           ...opponent.battlefield.map(c => ({
@@ -91,44 +120,22 @@ function GameBoard() {
         ];
         setValidTargets(attackTargets);
         showMessage('Select attack target');
+      } else if (creature && !creature.canAttack) {
+        showMessage('This creature cannot attack yet (summoning sickness)');
       }
-    }
-
-    // If targeting for attack
-    if (targetingMode && selectedCard && typeof selectedCard === 'number') {
-      const targetId = instanceId || `player_${opponent.id}`;
-      const result = attackWithCreature(gameState, selectedCard, targetId);
-      
-      if (result.success) {
-        setGameState({...gameState});
-        showMessage('Attack successful!');
-      } else {
-        showMessage(result.error);
-      }
-      
-      setTargetingMode(false);
-      setSelectedCard(null);
-      setValidTargets([]);
     }
   };
 
   const handleEndTurn = () => {
     endTurn(gameState);
     setGameState({...gameState});
-    setTargetingMode(false);
-    setSelectedCard(null);
-    setValidTargets([]);
+    resetSelection();
     showMessage(`${currentPlayer.name}'s turn ended`);
   };
 
   const getEnergyIcon = (energyType) => {
-    const icons = {
-      [ENERGY_TYPES.SHADOW]: '🌑',
-      [ENERGY_TYPES.BLOOD]: '🩸',
-      [ENERGY_TYPES.BONE]: '💀',
-      [ENERGY_TYPES.SPIRIT]: '👻'
-    };
-    return icons[energyType] || '⚡';
+    // Return CSS class for pixel art icons
+    return `energy-icon-${energyType}`;
   };
 
   const renderEnergyDisplay = (player) => {
@@ -141,7 +148,7 @@ function GameBoard() {
           
           return (
             <div key={energyType} className={`energy-${energyType}`}>
-              {getEnergyIcon(energyType)}
+              <span className={getEnergyIcon(energyType)}></span>
               <span className="energy-amount">
                 {available}/{amount}
               </span>
@@ -158,15 +165,15 @@ function GameBoard() {
     return (
       <div className="help-overlay" onClick={() => setShowHelp(false)}>
         <div className="help-content">
-          <h2>⚔️ How to Play Dark TCG ⚔️</h2>
+          <h2>⚔ ESCAPE THE DARK TOWER ⚔</h2>
           
           <div className="help-section">
-            <h3>🎯 Goal</h3>
-            <p>Reduce your opponent's health from 20 to 0!</p>
+            <h3>⚡ GOAL</h3>
+            <p>Defeat your opponent before they defeat you!</p>
           </div>
           
           <div className="help-section">
-            <h3>🎴 Your Turn</h3>
+            <h3>⚒ YOUR TURN</h3>
             <ol>
               <li><strong>Play Energy Cards</strong> - Free to play, provides mana for other cards</li>
               <li><strong>Summon Creatures</strong> - Costs energy, attacks opponents</li>
@@ -177,7 +184,7 @@ function GameBoard() {
           </div>
           
           <div className="help-section">
-            <h3>💡 Tips</h3>
+            <h3>⚡ TIPS</h3>
             <ul>
               <li>Glowing cards can be played</li>
               <li>Red glowing creatures can attack</li>
@@ -198,12 +205,25 @@ function GameBoard() {
   };
 
   const renderPlayerInfo = (player, isCurrentPlayer) => {
+    const isPlayerTarget = validTargets.some(t => t.id === `player_${player.id}`);
+    
     return (
-      <div className={`player-info ${isCurrentPlayer ? 'current-player' : 'opponent'}`}>
+      <div 
+        className={`player-info ${isCurrentPlayer ? 'current-player' : 'opponent'} ${isPlayerTarget ? 'valid-target' : ''}`}
+        onClick={() => {
+          if (isPlayerTarget && (attackingCreature || targetingMode)) {
+            handleCardClick(null, `player_${player.id}`);
+          }
+        }}
+      >
         <div className="player-header">
           <h3>{player.name} {isCurrentPlayer ? '' : ''}</h3>
-          <div className="health">❤️ {player.health}</div>
-          <div className="deck-count">📚 {player.deck.length}</div>
+          <div className="health">
+            <span className="icon-health"></span> {player.health}
+          </div>
+          <div className="deck-count">
+            <span className="icon-deck"></span> {player.deck.length}
+          </div>
         </div>
         {renderEnergyDisplay(player)}
       </div>
@@ -242,17 +262,24 @@ function GameBoard() {
       <div className={`battlefield ${isCurrentPlayer ? 'player-battlefield' : 'opponent-battlefield'}`}>
         <h4>{isCurrentPlayer ? 'Your Creatures' : `${player.name}'s Creatures`}</h4>
         <div className="battlefield-cards">
-          {player.battlefield.map((creature) => (
-            <Card
-              key={creature.instanceId}
-              cardId={creature.cardId}
-              instanceId={creature.instanceId}
-              currentHealth={creature.currentHealth}
-              canAttack={creature.canAttack && isCurrentPlayer}
-              onClick={handleCardClick}
-              isOnBattlefield={true}
-            />
-          ))}
+          {player.battlefield.map((creature) => {
+            const isAttacking = attackingCreature === creature.instanceId;
+            const isValidTarget = validTargets.some(t => t.id === creature.instanceId);
+            
+            return (
+              <Card
+                key={creature.instanceId}
+                cardId={creature.cardId}
+                instanceId={creature.instanceId}
+                currentHealth={creature.currentHealth}
+                canAttack={creature.canAttack && isCurrentPlayer}
+                onClick={handleCardClick}
+                isOnBattlefield={true}
+                isAttacking={isAttacking}
+                isValidTarget={isValidTarget}
+              />
+            );
+          })}
         </div>
       </div>
     );
@@ -275,7 +302,7 @@ function GameBoard() {
       {renderHelpOverlay()}
       
       <div className="game-header">
-        <h1>🌙 Dark TCG ⚔️</h1>
+        <h1>DARK TOWER</h1>
         <div className="turn-info">
           Turn {gameState.turn} - {currentPlayer.name}'s Turn
         </div>
@@ -294,18 +321,14 @@ function GameBoard() {
         <button 
           className="end-turn-btn" 
           onClick={handleEndTurn}
-          disabled={targetingMode}
+          disabled={targetingMode || attackingCreature}
         >
           End Turn
         </button>
-        {targetingMode && (
+        {(targetingMode || attackingCreature) && (
           <button 
             className="cancel-btn" 
-            onClick={() => {
-              setTargetingMode(false);
-              setSelectedCard(null);
-              setValidTargets([]);
-            }}
+            onClick={resetSelection}
           >
             Cancel
           </button>

@@ -1,280 +1,410 @@
+/* Card - 16-bit Pixel Art Style */
+
 .card {
-  width: 200px;
-  height: 280px;
-  border-radius: 16px;
-  border: 3px solid #2a2a2a;
-  background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), 
-              0 2px 8px rgba(0, 0, 0, 0.6),
-              inset 0 1px 2px rgba(255, 255, 255, 0.1);
+  width: 160px;
+  height: 220px;
+  background: var(--color-stone);
   position: relative;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
-  padding: 12px;
-  margin: 8px;
-  font-family: 'Georgia', serif;
-  color: #e0e0e0;
-  overflow: hidden;
+  padding: var(--pixel-2x);
+  transition: none;
+  image-rendering: pixelated;
+  font-family: var(--font-pixel);
+  box-shadow: 
+    calc(var(--pixel) * -1) 0 0 0 var(--color-black),
+    var(--pixel) 0 0 0 var(--color-black),
+    0 calc(var(--pixel) * -1) 0 0 var(--color-black),
+    0 var(--pixel) 0 0 var(--color-black);
 }
 
 .card::before {
+  content: '';
+  position: absolute;
+  top: var(--pixel);
+  left: var(--pixel);
+  right: var(--pixel);
+  bottom: var(--pixel);
+  border: var(--pixel) solid var(--color-black);
+  pointer-events: none;
+}
+
+/* Card hover effects */
+.card.in-hand:hover:not(.disabled) {
+  transform: translateY(calc(var(--pixel-2x) * -1));
+}
+
+.card.on-battlefield:hover {
+  transform: scale(1.05);
+}
+
+/* Card states */
+.card.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.card.can-attack {
+  animation: attackReady 1s ease-in-out infinite;
+}
+
+@keyframes attackReady {
+  0%, 100% {
+    box-shadow: 
+      0 0 0 var(--pixel) var(--color-blood),
+      calc(var(--pixel) * -1) 0 0 0 var(--color-black),
+      var(--pixel) 0 0 0 var(--color-black),
+      0 calc(var(--pixel) * -1) 0 0 var(--color-black),
+      0 var(--pixel) 0 0 var(--color-black);
+  }
+  50% {
+    box-shadow: 
+      0 0 0 var(--pixel-2x) var(--color-blood),
+      calc(var(--pixel) * -1) 0 0 0 var(--color-black),
+      var(--pixel) 0 0 0 var(--color-black),
+      0 calc(var(--pixel) * -1) 0 0 var(--color-black),
+      0 var(--pixel) 0 0 var(--color-black);
+  }
+}
+
+.card.attacking {
+  box-shadow: 
+    0 0 0 var(--pixel-2x) var(--color-gold),
+    0 0 0 var(--pixel-3x) var(--color-dark-red),
+    calc(var(--pixel) * -1) 0 0 0 var(--color-black),
+    var(--pixel) 0 0 0 var(--color-black),
+    0 calc(var(--pixel) * -1) 0 0 var(--color-black),
+    0 var(--pixel) 0 0 var(--color-black);
+  transform: scale(1.1);
+  z-index: 10;
+}
+
+.card.valid-target {
+  animation: targetPulse 0.5s infinite alternate;
+}
+
+@keyframes targetPulse {
+  from {
+    box-shadow: 
+      0 0 0 var(--pixel) var(--color-blood),
+      0 0 0 var(--pixel-2x) var(--color-dark-red),
+      calc(var(--pixel) * -1) 0 0 0 var(--color-black),
+      var(--pixel) 0 0 0 var(--color-black),
+      0 calc(var(--pixel) * -1) 0 0 var(--color-black),
+      0 var(--pixel) 0 0 var(--color-black);
+  }
+  to {
+    box-shadow: 
+      0 0 0 var(--pixel-2x) var(--color-blood),
+      0 0 0 var(--pixel-3x) var(--color-dark-red),
+      calc(var(--pixel) * -1) 0 0 0 var(--color-black),
+      var(--pixel) 0 0 0 var(--color-black),
+      0 calc(var(--pixel) * -1) 0 0 var(--color-black),
+      0 var(--pixel) 0 0 var(--color-black);
+  }
+}
+
+/* Card type specific backgrounds */
+.card-creature {
+  background: linear-gradient(180deg, var(--color-dark-purple) 0%, var(--color-stone) 50%);
+}
+
+.card-spell {
+  background: linear-gradient(180deg, var(--color-dark-red) 0%, var(--color-stone) 50%);
+}
+
+.card-energy {
+  background: linear-gradient(180deg, var(--color-black) 0%, var(--color-stone) 30%);
+}
+
+/* Rarity borders */
+.card-common::after {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%);
-  transform: translateX(-100%);
-  transition: transform 0.6s;
+  border: var(--pixel) solid var(--color-stone-light);
+  pointer-events: none;
 }
 
-.card:hover::before {
-  transform: translateX(100%);
-}
-
-.card:hover {
-  transform: translateY(-8px) scale(1.05);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.9), 
-              0 4px 16px rgba(0, 0, 0, 0.7),
-              0 0 32px rgba(100, 100, 255, 0.2);
-}
-
-.card.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  filter: grayscale(0.5);
-}
-
-.card.disabled:hover {
-  transform: none;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), 
-              0 2px 8px rgba(0, 0, 0, 0.6);
-}
-
-.card.can-attack {
-  border-color: #ff4444;
-  box-shadow: 0 8px 32px rgba(255, 68, 68, 0.6), 
-              0 0 24px rgba(255, 68, 68, 0.8),
-              inset 0 1px 2px rgba(255, 255, 255, 0.2);
-  animation: pulse-attack 1.5s infinite;
-}
-
-@keyframes pulse-attack {
-  0% { box-shadow: 0 8px 32px rgba(255, 68, 68, 0.6), 0 0 24px rgba(255, 68, 68, 0.8); }
-  50% { box-shadow: 0 8px 32px rgba(255, 68, 68, 0.8), 0 0 48px rgba(255, 68, 68, 1); }
-  100% { box-shadow: 0 8px 32px rgba(255, 68, 68, 0.6), 0 0 24px rgba(255, 68, 68, 0.8); }
-}
-
-/* Card Types */
-.card-creature {
-  border-color: #8B4513;
-  background: linear-gradient(145deg, #3a2818, #2a1f10);
-}
-
-.card-spell {
-  border-color: #4B0082;
-  background: linear-gradient(145deg, #2a1a3a, #1a0f2a);
-}
-
-.card-energy {
-  border-color: #228B22;
-  background: linear-gradient(145deg, #1a3a1a, #0f2a0f);
-}
-
-/* Rarity */
-.card-common {
-  border-width: 3px;
-}
-
-.card-uncommon {
-  border-width: 4px;
-  border-color: #C0C0C0;
-  box-shadow: 0 8px 32px rgba(192, 192, 192, 0.3), 
-              0 2px 8px rgba(0, 0, 0, 0.6),
-              inset 0 1px 2px rgba(255, 255, 255, 0.2);
-}
-
-.card-rare {
-  border-width: 4px;
-  border-color: #FFD700;
-  background: linear-gradient(145deg, #3a3a1a, #2a2a0f);
-  box-shadow: 0 8px 32px rgba(255, 215, 0, 0.4), 
-              0 2px 8px rgba(0, 0, 0, 0.6),
-              inset 0 1px 2px rgba(255, 255, 255, 0.3);
-}
-
-/* Card Elements */
-.card-cost {
+.card-uncommon::after {
+  content: '';
   position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-  max-width: 80px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: var(--pixel) solid var(--color-spirit);
+  pointer-events: none;
 }
 
-.card-cost span {
-  background: rgba(0, 0, 0, 0.9);
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: bold;
-  border: 2px solid;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+.card-rare::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: var(--pixel) solid var(--color-gold);
+  pointer-events: none;
+  animation: rareShine 2s ease-in-out infinite;
 }
 
-.cost-shadow { color: #9370DB; border-color: #9370DB; background: rgba(147, 112, 219, 0.2); }
-.cost-blood { color: #DC143C; border-color: #DC143C; background: rgba(220, 20, 60, 0.2); }
-.cost-bone { color: #F5F5DC; border-color: #F5F5DC; background: rgba(245, 245, 220, 0.2); }
-.cost-spirit { color: #87CEEB; border-color: #87CEEB; background: rgba(135, 206, 235, 0.2); }
+@keyframes rareShine {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
 
+/* Card Header */
 .card-header {
-  margin-bottom: 12px;
+  margin-bottom: var(--pixel-2x);
+  padding-bottom: var(--pixel);
+  border-bottom: var(--pixel) solid var(--color-black);
 }
 
 .card-name {
-  font-size: 16px;
-  font-weight: bold;
+  font-size: 10px;
+  color: var(--color-parchment);
+  text-transform: uppercase;
+  text-align: center;
   margin: 0;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
   line-height: 1.2;
   letter-spacing: 0.5px;
+  text-shadow: var(--pixel) var(--pixel) 0 var(--color-black);
 }
 
 .card-type {
-  font-size: 11px;
-  opacity: 0.8;
+  display: block;
+  font-size: 8px;
+  color: var(--color-bone);
+  text-align: center;
+  margin-top: var(--pixel);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #aaa;
 }
 
+/* Card Cost */
+.card-cost {
+  position: absolute;
+  top: var(--pixel);
+  right: var(--pixel);
+  background: var(--color-black);
+  padding: var(--pixel);
+  display: flex;
+  gap: var(--pixel);
+  box-shadow: 
+    calc(var(--pixel) * -1) 0 0 0 var(--color-black),
+    var(--pixel) 0 0 0 var(--color-black),
+    0 calc(var(--pixel) * -1) 0 0 var(--color-black),
+    0 var(--pixel) 0 0 var(--color-black);
+}
+
+.card-cost span {
+  font-size: 10px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+}
+
+.cost-shadow { color: var(--color-light-purple); }
+.cost-blood { color: var(--color-blood); }
+.cost-bone { color: var(--color-bone); }
+.cost-spirit { color: var(--color-spirit); }
+
+/* Card Body */
 .card-body {
-  flex-grow: 1;
-  font-size: 11px;
-  line-height: 1.4;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pixel-2x);
+  overflow: hidden;
 }
 
 .card-description {
-  margin: 0 0 8px 0;
-  font-style: italic;
-  opacity: 0.9;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  font-size: 8px;
+  color: var(--color-parchment);
+  line-height: 1.4;
+  text-align: center;
+  padding: 0 var(--pixel);
 }
 
+/* Card Abilities */
 .card-abilities {
-  margin-top: 8px;
+  margin-top: auto;
 }
 
 .ability {
-  background: rgba(0, 0, 0, 0.6);
-  border-left: 3px solid #666;
-  padding: 4px 8px;
-  margin: 4px 0;
-  font-size: 10px;
-  line-height: 1.3;
-  border-radius: 4px;
-  backdrop-filter: blur(4px);
+  font-size: 8px;
+  color: var(--color-gold);
+  text-align: center;
+  padding: var(--pixel);
+  background: rgba(0,0,0,0.5);
+  margin-bottom: var(--pixel);
+  border: var(--pixel) solid var(--color-black);
 }
 
+/* Card Stats */
 .card-stats {
+  position: absolute;
+  bottom: var(--pixel);
+  left: var(--pixel);
+  right: var(--pixel);
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.6));
-  border-radius: 8px;
-  padding: 8px 12px;
-  margin-top: 8px;
+  padding: var(--pixel-2x);
+  background: var(--color-black);
+  box-shadow: 
+    0 calc(var(--pixel) * -1) 0 0 var(--color-black);
+}
+
+.card-stats .attack,
+.card-stats .health {
+  font-size: 12px;
   font-weight: bold;
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: var(--pixel);
 }
 
-.attack {
-  color: #ff6b6b;
-  font-size: 16px;
-  text-shadow: 0 0 8px rgba(255, 107, 107, 0.8);
+.card-stats .attack {
+  color: var(--color-stone-light);
 }
 
-.health {
-  color: #51cf66;
-  font-size: 16px;
-  text-shadow: 0 0 8px rgba(81, 207, 102, 0.8);
+.card-stats .health {
+  color: var(--color-blood);
 }
 
+.card-stats .health.damaged {
+  color: var(--color-dark-red);
+  animation: damagePulse 0.5s ease-out;
+}
+
+@keyframes damagePulse {
+  0% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Energy Type Display */
 .energy-type {
   position: absolute;
-  bottom: 8px;
-  right: 8px;
-  font-size: 24px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px;
   opacity: 0.3;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+  text-shadow: 
+    var(--pixel) var(--pixel) 0 var(--color-black),
+    calc(var(--pixel) * -1) var(--pixel) 0 var(--color-black),
+    var(--pixel) calc(var(--pixel) * -1) 0 var(--color-black),
+    calc(var(--pixel) * -1) calc(var(--pixel) * -1) 0 var(--color-black);
 }
 
-/* Hand and Battlefield specific styles */
-.card.in-hand {
-  transform: translateY(0);
+/* Replace emoji with pixel art icons */
+.icon-attack,
+.icon-health,
+.icon-energy {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  position: relative;
+  vertical-align: middle;
 }
 
-.card.in-hand:hover {
-  transform: translateY(-16px) scale(1.08) rotate(-2deg);
-  z-index: 100;
+/* Pixel art sword icon */
+.icon-attack::before {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 8px;
+  background: var(--color-stone-light);
+  left: 5px;
+  top: 2px;
 }
 
-.card.in-hand:not(.disabled) {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), 
-              0 0 16px rgba(100, 200, 255, 0.3);
+.icon-attack::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 2px;
+  background: var(--color-stone-light);
+  left: 2px;
+  top: 3px;
 }
 
-.card.on-battlefield {
-  margin: 12px;
+/* Pixel art heart icon */
+.icon-health::before {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--color-blood);
+  left: 3px;
+  top: 3px;
+  box-shadow: 
+    -2px -2px 0 0 var(--color-blood),
+    2px -2px 0 0 var(--color-blood),
+    0 2px 0 0 var(--color-blood);
 }
 
-.card.on-battlefield:hover {
-  transform: scale(1.08);
+/* Energy icons using pure CSS */
+.energy-icon-shadow,
+.energy-icon-blood,
+.energy-icon-bone,
+.energy-icon-spirit {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  position: relative;
+  margin-right: 2px;
 }
 
-/* Playable card glow */
-.card.in-hand:not(.disabled) {
-  animation: playable-glow 2s ease-in-out infinite;
+.energy-icon-shadow::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--color-shadow);
+  border: 1px solid var(--color-dark-purple);
+  left: 2px;
+  top: 2px;
+  border-radius: 50%;
 }
 
-@keyframes playable-glow {
-  0%, 100% { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), 0 0 16px rgba(100, 200, 255, 0.3); }
-  50% { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), 0 0 32px rgba(100, 200, 255, 0.6); }
+.energy-icon-blood::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--color-blood);
+  border: 1px solid var(--color-dark-red);
+  left: 2px;
+  top: 2px;
+  border-radius: 50% 0;
+  transform: rotate(45deg);
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .card {
-    width: 140px;
-    height: 200px;
-    padding: 8px;
-  }
-  
-  .card-name {
-    font-size: 13px;
-  }
-  
-  .card-body {
-    font-size: 9px;
-  }
-  
-  .ability {
-    font-size: 8px;
-  }
-  
-  .card-cost span {
-    width: 24px;
-    height: 24px;
-    font-size: 10px;
-  }
+.energy-icon-bone::before {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 4px;
+  background: var(--color-bone);
+  left: 1px;
+  top: 4px;
+  border-radius: 2px;
+}
+
+.energy-icon-spirit::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--color-spirit);
+  border: 1px solid var(--color-spirit);
+  left: 2px;
+  top: 2px;
+  opacity: 0.7;
+  border-radius: 50% 50% 0 50%;
 }
