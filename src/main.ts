@@ -20,7 +20,7 @@ const camera: Camera = {
 
 const config: SimConfig = {
   gravity: 1,
-  timeScale: 1,
+  timeScale: 0.5,
   softening: 10,
   damping: 1.0,
   trailLength: 80,
@@ -43,7 +43,7 @@ const stars: Star[] = generateStarfield(1500);
 // ============================================================
 
 const speedLevels = [0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32];
-let speedIndex = 3; // starts at 1x
+let speedIndex = 2; // starts at 0.5x
 
 function updateSpeedDisplay(): void {
   const speed = speedLevels[speedIndex];
