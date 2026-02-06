@@ -1,6 +1,6 @@
 import { Body, Camera, SimConfig, MergeEvent } from './types';
 import { Renderer } from './renderer';
-import { stepSimulation, createBody, massToColor } from './physics';
+import { stepSimulation } from './physics';
 import { loadPreset } from './presets';
 import { ParticleSystem } from './particles';
 import { generateStarfield, Star } from './starfield';
@@ -39,6 +39,21 @@ const particleSystem = new ParticleSystem();
 const stars: Star[] = generateStarfield(1500);
 
 // ============================================================
+// Speed levels
+// ============================================================
+
+const speedLevels = [0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32];
+let speedIndex = 3; // starts at 1x
+
+function updateSpeedDisplay(): void {
+  const speed = speedLevels[speedIndex];
+  speedDisplay.textContent = speed < 1 ? `${speed}x` : `${speed}x`;
+  config.timeScale = speed;
+  timeSlider.value = String(Math.min(5, speed));
+  updateSliderDisplays();
+}
+
+// ============================================================
 // UI
 // ============================================================
 
@@ -46,7 +61,6 @@ const fpsDisplay = document.getElementById('fps-display')!;
 const bodyCount = document.getElementById('body-count')!;
 const hint = document.getElementById('hint')!;
 const sidePanel = document.getElementById('side-panel')!;
-const creationIndicator = document.getElementById('creation-indicator')!;
 const bodyInfo = document.getElementById('body-info')!;
 const infoDot = document.getElementById('info-dot')!;
 const infoMass = document.getElementById('info-mass')!;
@@ -56,12 +70,12 @@ const infoRadius = document.getElementById('info-radius')!;
 
 const btnMenu = document.getElementById('btn-menu')!;
 const btnPlay = document.getElementById('btn-play')!;
-const btnStep = document.getElementById('btn-step')!;
 const btnTrails = document.getElementById('btn-trails')!;
-const btnVectors = document.getElementById('btn-vectors')!;
 const btnCenter = document.getElementById('btn-center')!;
 const btnFollow = document.getElementById('btn-follow')!;
-const btnClear = document.getElementById('btn-clear')!;
+const btnSlow = document.getElementById('btn-slow')!;
+const btnFast = document.getElementById('btn-fast')!;
+const speedDisplay = document.getElementById('speed-display')!;
 
 const gravitySlider = document.getElementById('gravity-slider') as HTMLInputElement;
 const timeSlider = document.getElementById('time-slider') as HTMLInputElement;
@@ -95,6 +109,11 @@ function syncSlidersFromConfig(): void {
   dampingSlider.value = String(config.damping);
   trailSlider.value = String(config.trailLength);
   bloomSlider.value = String(config.bloomIntensity);
+  // Sync speed index to match config.timeScale
+  const closest = speedLevels.reduce((prev, curr, idx) =>
+    Math.abs(curr - config.timeScale) < Math.abs(speedLevels[prev] - config.timeScale) ? idx : prev, 0);
+  speedIndex = closest;
+  speedDisplay.textContent = `${speedLevels[speedIndex]}x`;
   updateSliderDisplays();
 }
 
@@ -142,20 +161,11 @@ btnPlay.addEventListener('click', () => {
   btnPlay.classList.toggle('active', config.paused);
 });
 
-btnStep.addEventListener('click', () => {
-  if (config.paused) stepSimulation(bodies, config, 1 / 60);
-});
-
 btnTrails.addEventListener('click', () => {
   config.showTrails = !config.showTrails;
   btnTrails.classList.toggle('active', config.showTrails);
 });
 btnTrails.classList.add('active');
-
-btnVectors.addEventListener('click', () => {
-  config.showVectors = !config.showVectors;
-  btnVectors.classList.toggle('active', config.showVectors);
-});
 
 btnCenter.addEventListener('click', () => {
   config.followHeaviest = false;
@@ -170,9 +180,14 @@ btnFollow.addEventListener('click', () => {
   btnFollow.classList.toggle('active', config.followHeaviest);
 });
 
-btnClear.addEventListener('click', () => {
-  bodies = [];
-  selectedBody = null;
+btnSlow.addEventListener('click', () => {
+  if (speedIndex > 0) speedIndex--;
+  updateSpeedDisplay();
+});
+
+btnFast.addEventListener('click', () => {
+  if (speedIndex < speedLevels.length - 1) speedIndex++;
+  updateSpeedDisplay();
 });
 
 // Preset buttons
@@ -194,24 +209,21 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
 });
 
 // ============================================================
-// Interaction
+// Interaction — pan, select, zoom only (no body creation)
 // ============================================================
 
 interface DragState {
-  type: 'none' | 'create' | 'pan';
+  type: 'none' | 'pan';
   startX: number;
   startY: number;
   startWorldX: number;
   startWorldY: number;
-  currentX: number;
-  currentY: number;
   movedDistance: number;
 }
 
 const drag: DragState = {
   type: 'none', startX: 0, startY: 0,
-  startWorldX: 0, startWorldY: 0,
-  currentX: 0, currentY: 0, movedDistance: 0,
+  startWorldX: 0, startWorldY: 0, movedDistance: 0,
 };
 
 function screenToWorld(sx: number, sy: number): { x: number; y: number } {
@@ -225,7 +237,7 @@ function screenToWorld(sx: number, sy: number): { x: number; y: number } {
 function findBodyAt(wx: number, wy: number): Body | null {
   let closest: Body | null = null;
   let closestDist = Infinity;
-  const hitRadius = 15 / camera.zoom; // Generous hit area
+  const hitRadius = 15 / camera.zoom;
   for (const b of bodies) {
     if (!b.alive) continue;
     const dx = b.x - wx;
@@ -243,24 +255,12 @@ function findBodyAt(wx: number, wy: number): Body | null {
 // Mouse
 canvas.addEventListener('mousedown', (e) => {
   e.preventDefault();
-  if (e.button === 2 || e.button === 1 || e.ctrlKey || e.metaKey) {
-    drag.type = 'pan';
-    drag.startX = e.clientX;
-    drag.startY = e.clientY;
-    drag.startWorldX = camera.targetX;
-    drag.startWorldY = camera.targetY;
-  } else {
-    drag.type = 'create';
-    drag.startX = e.clientX;
-    drag.startY = e.clientY;
-    const world = screenToWorld(e.clientX, e.clientY);
-    drag.startWorldX = world.x;
-    drag.startWorldY = world.y;
-    drag.currentX = e.clientX;
-    drag.currentY = e.clientY;
-    drag.movedDistance = 0;
-    creationIndicator.style.display = 'block';
-  }
+  drag.type = 'pan';
+  drag.startX = e.clientX;
+  drag.startY = e.clientY;
+  drag.startWorldX = camera.targetX;
+  drag.startWorldY = camera.targetY;
+  drag.movedDistance = 0;
 });
 
 canvas.addEventListener('mousemove', (e) => {
@@ -268,84 +268,48 @@ canvas.addEventListener('mousemove', (e) => {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const dx = (e.clientX - drag.startX) * dpr / camera.zoom;
     const dy = (e.clientY - drag.startY) * dpr / camera.zoom;
+    drag.movedDistance = Math.sqrt((e.clientX - drag.startX) ** 2 + (e.clientY - drag.startY) ** 2);
     camera.targetX = drag.startWorldX - dx;
     camera.targetY = drag.startWorldY - dy;
-    config.followHeaviest = false;
-    btnFollow.classList.remove('active');
-  } else if (drag.type === 'create') {
-    drag.currentX = e.clientX;
-    drag.currentY = e.clientY;
-    const dx = drag.currentX - drag.startX;
-    const dy = drag.currentY - drag.startY;
-    drag.movedDistance = Math.sqrt(dx * dx + dy * dy);
-    updateCreationIndicator(dx, dy);
+    if (drag.movedDistance > 5) {
+      config.followHeaviest = false;
+      btnFollow.classList.remove('active');
+    }
   }
 });
 
-canvas.addEventListener('mouseup', () => {
-  if (drag.type === 'create') {
-    const dx = drag.currentX - drag.startX;
-    const dy = drag.currentY - drag.startY;
-    const pixelDist = Math.sqrt(dx * dx + dy * dy);
-
-    if (pixelDist < 5) {
-      // Click — try to select a body
-      const hit = findBodyAt(drag.startWorldX, drag.startWorldY);
-      selectedBody = hit;
-    } else {
-      const mass = Math.max(1, pixelDist * 2);
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const velocityScale = 0.3 / camera.zoom * dpr;
-      bodies.push(createBody(drag.startWorldX, drag.startWorldY, -dx * velocityScale, -dy * velocityScale, mass, massToColor(mass)));
-      hint.style.opacity = '0';
-    }
-    creationIndicator.style.display = 'none';
-    (creationIndicator.querySelector('.arrow') as HTMLElement).style.display = 'none';
+canvas.addEventListener('mouseup', (e) => {
+  if (drag.type === 'pan' && drag.movedDistance < 5) {
+    // Short click — select body
+    const world = screenToWorld(e.clientX, e.clientY);
+    selectedBody = findBodyAt(world.x, world.y);
   }
   drag.type = 'none';
 });
 
+// Zoom — more responsive, deeper range
 canvas.addEventListener('wheel', (e) => {
   e.preventDefault();
-  camera.targetZoom = Math.max(0.01, Math.min(20, camera.targetZoom * (e.deltaY > 0 ? 0.9 : 1.1)));
+  const factor = e.deltaY > 0 ? 0.85 : 1.18;
+  camera.targetZoom = Math.max(0.005, Math.min(200, camera.targetZoom * factor));
 }, { passive: false });
 
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-// Touch
+// Touch — single finger = pan/select, two fingers = pinch zoom + pan
 let touchStartDist = 0;
 let touchStartZoom = 0;
-let touchTimer: number | null = null;
 
 canvas.addEventListener('touchstart', (e) => {
   e.preventDefault();
   if (e.touches.length === 1) {
-    drag.type = 'create';
+    drag.type = 'pan';
     drag.startX = e.touches[0].clientX;
     drag.startY = e.touches[0].clientY;
-    const world = screenToWorld(drag.startX, drag.startY);
-    drag.startWorldX = world.x;
-    drag.startWorldY = world.y;
-    drag.currentX = drag.startX;
-    drag.currentY = drag.startY;
+    drag.startWorldX = camera.targetX;
+    drag.startWorldY = camera.targetY;
     drag.movedDistance = 0;
-
-    // Long press to select (300ms)
-    touchTimer = window.setTimeout(() => {
-      if (drag.movedDistance < 10) {
-        const hit = findBodyAt(drag.startWorldX, drag.startWorldY);
-        if (hit) {
-          selectedBody = hit;
-          drag.type = 'none';
-          creationIndicator.style.display = 'none';
-        }
-      }
-      touchTimer = null;
-    }, 300);
-
-    creationIndicator.style.display = 'block';
   } else if (e.touches.length === 2) {
-    if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; }
     drag.type = 'pan';
     const dx = e.touches[1].clientX - e.touches[0].clientX;
     const dy = e.touches[1].clientY - e.touches[0].clientY;
@@ -355,25 +319,27 @@ canvas.addEventListener('touchstart', (e) => {
     drag.startY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
     drag.startWorldX = camera.targetX;
     drag.startWorldY = camera.targetY;
-    creationIndicator.style.display = 'none';
   }
 }, { passive: false });
 
 canvas.addEventListener('touchmove', (e) => {
   e.preventDefault();
-  if (e.touches.length === 1 && drag.type === 'create') {
-    drag.currentX = e.touches[0].clientX;
-    drag.currentY = e.touches[0].clientY;
-    const dx = drag.currentX - drag.startX;
-    const dy = drag.currentY - drag.startY;
-    drag.movedDistance = Math.sqrt(dx * dx + dy * dy);
-    if (drag.movedDistance > 10 && touchTimer) { clearTimeout(touchTimer); touchTimer = null; }
-    updateCreationIndicator(dx, dy);
-  } else if (e.touches.length === 2 && drag.type === 'pan') {
+  if (e.touches.length === 1 && drag.type === 'pan') {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dx = (e.touches[0].clientX - drag.startX) * dpr / camera.zoom;
+    const dy = (e.touches[0].clientY - drag.startY) * dpr / camera.zoom;
+    drag.movedDistance = Math.sqrt((e.touches[0].clientX - drag.startX) ** 2 + (e.touches[0].clientY - drag.startY) ** 2);
+    camera.targetX = drag.startWorldX - dx;
+    camera.targetY = drag.startWorldY - dy;
+    if (drag.movedDistance > 10) {
+      config.followHeaviest = false;
+      btnFollow.classList.remove('active');
+    }
+  } else if (e.touches.length === 2) {
     const dx = e.touches[1].clientX - e.touches[0].clientX;
     const dy = e.touches[1].clientY - e.touches[0].clientY;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    camera.targetZoom = Math.max(0.01, Math.min(20, touchStartZoom * (dist / touchStartDist)));
+    camera.targetZoom = Math.max(0.005, Math.min(200, touchStartZoom * (dist / touchStartDist)));
     const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
     const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -383,50 +349,13 @@ canvas.addEventListener('touchmove', (e) => {
 }, { passive: false });
 
 canvas.addEventListener('touchend', (e) => {
-  if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; }
-  if (drag.type === 'create' && e.touches.length === 0) {
-    const dx = drag.currentX - drag.startX;
-    const dy = drag.currentY - drag.startY;
-    const pixelDist = Math.sqrt(dx * dx + dy * dy);
-
-    if (pixelDist < 10) {
-      // Tap — select body or deselect
-      const hit = findBodyAt(drag.startWorldX, drag.startWorldY);
-      selectedBody = hit;
-    } else {
-      const mass = Math.max(1, pixelDist * 2);
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const velocityScale = 0.3 / camera.zoom * dpr;
-      bodies.push(createBody(drag.startWorldX, drag.startWorldY, -dx * velocityScale, -dy * velocityScale, mass, massToColor(mass)));
-      hint.style.opacity = '0';
-    }
-    creationIndicator.style.display = 'none';
+  if (drag.type === 'pan' && e.touches.length === 0 && drag.movedDistance < 10) {
+    // Tap — select body
+    const world = screenToWorld(drag.startX, drag.startY);
+    selectedBody = findBodyAt(world.x, world.y);
   }
   if (e.touches.length === 0) drag.type = 'none';
 });
-
-function updateCreationIndicator(dx: number, dy: number): void {
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  const mass = Math.max(1, dist * 2);
-  const size = Math.max(20, Math.min(60, Math.pow(mass, 0.35) * 8));
-
-  creationIndicator.style.left = `${drag.startX}px`;
-  creationIndicator.style.top = `${drag.startY}px`;
-
-  const ring = creationIndicator.querySelector('.ring') as HTMLElement;
-  ring.style.width = `${size}px`;
-  ring.style.height = `${size}px`;
-
-  const massLabel = creationIndicator.querySelector('.mass-label') as HTMLElement;
-  massLabel.textContent = dist > 5 ? `m=${formatNum(mass)}` : '';
-
-  if (dist > 5) {
-    const arrow = creationIndicator.querySelector('.arrow') as HTMLElement;
-    arrow.style.width = `${dist}px`;
-    arrow.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
-    arrow.style.display = 'block';
-  }
-}
 
 // Keyboard
 document.addEventListener('keydown', (e) => {
@@ -438,11 +367,17 @@ document.addEventListener('keydown', (e) => {
       btnPlay.classList.toggle('active', config.paused);
       break;
     case 't': config.showTrails = !config.showTrails; btnTrails.classList.toggle('active', config.showTrails); break;
-    case 'v': config.showVectors = !config.showVectors; btnVectors.classList.toggle('active', config.showVectors); break;
     case 'c': camera.targetX = 0; camera.targetY = 0; break;
     case 'f': config.followHeaviest = !config.followHeaviest; btnFollow.classList.toggle('active', config.followHeaviest); break;
     case 'Escape': selectedBody = null; break;
-    case 'Backspace': case 'Delete': bodies = []; selectedBody = null; break;
+    case 'ArrowUp': case ']':
+      if (speedIndex < speedLevels.length - 1) speedIndex++;
+      updateSpeedDisplay();
+      break;
+    case 'ArrowDown': case '[':
+      if (speedIndex > 0) speedIndex--;
+      updateSpeedDisplay();
+      break;
     case 'Tab':
       e.preventDefault();
       panelVisible = !panelVisible;
@@ -476,8 +411,8 @@ function loop(time: number): void {
     frameCount = 0;
   }
 
-  // Smooth camera
-  const lerpSpeed = 1 - Math.pow(0.001, dt);
+  // Smooth camera — snappy response
+  const lerpSpeed = 1 - Math.pow(0.00001, dt);
   camera.x += (camera.targetX - camera.x) * lerpSpeed;
   camera.y += (camera.targetY - camera.y) * lerpSpeed;
   camera.zoom += (camera.targetZoom - camera.zoom) * lerpSpeed;
@@ -512,7 +447,6 @@ function loop(time: number): void {
       stepSimulation(bodies, config, subDt, mergeEvents);
     }
 
-    // Spawn explosion particles and camera shake for merges
     for (const evt of mergeEvents) {
       particleSystem.spawnMergeExplosion(evt);
       camera.shakeIntensity = Math.min(15, camera.shakeIntensity + Math.sqrt(evt.mass) * 0.3);
@@ -543,7 +477,7 @@ function loop(time: number): void {
 
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 if (isMobile) {
-  hint.textContent = 'Tap & drag to create — Pinch to zoom — Two fingers to pan';
+  hint.textContent = 'Pinch to zoom — Drag to pan — Tap a planet to select';
 }
 
 const initial = loadPreset('solar-system');
