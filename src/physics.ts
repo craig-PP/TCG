@@ -1,4 +1,4 @@
-import { Body, SimConfig } from './types';
+import { Body, SimConfig, MergeEvent } from './types';
 
 // Barnes-Hut quadtree node
 interface QuadNode {
@@ -130,7 +130,7 @@ export function buildTree(bodies: Body[]): QuadNode {
   return root;
 }
 
-export function stepSimulation(bodies: Body[], config: SimConfig, dt: number): void {
+export function stepSimulation(bodies: Body[], config: SimConfig, dt: number, mergeEvents?: MergeEvent[]): void {
   const liveBodies = bodies.filter(b => b.alive);
   if (liveBodies.length === 0) return;
 
@@ -199,14 +199,24 @@ export function stepSimulation(bodies: Body[], config: SimConfig, dt: number): v
           ];
 
           light.alive = false;
+
+          if (mergeEvents) {
+            mergeEvents.push({
+              x: heavy.x,
+              y: heavy.y,
+              mass: totalMass,
+              color: [...heavy.color] as [number, number, number],
+            });
+          }
         }
       }
     }
   }
 
-  // Record trails
+  // Record trails and age
   for (const body of liveBodies) {
     if (!body.alive) continue;
+    body.age += actualDt;
     const idx = body.trailIndex * 2;
     body.trail[idx] = body.x;
     body.trail[idx + 1] = body.y;
@@ -238,6 +248,7 @@ export function createBody(
     trailLength: trailCapacity,
     id: nextId++,
     alive: true,
+    age: 0,
   };
 }
 

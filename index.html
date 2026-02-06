@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#000000" />
   <title>Cosmos — N-Body Gravitational Simulator</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌌</text></svg>">
   <style>
@@ -10,33 +13,39 @@
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    body {
+    html, body {
       background: #000;
       overflow: hidden;
-      font-family: 'Inter', system-ui, sans-serif;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
       color: #e0e0e0;
       user-select: none;
       -webkit-user-select: none;
+      touch-action: none;
+      -webkit-touch-callout: none;
+      overscroll-behavior: none;
+      height: 100%;
+      width: 100%;
+      position: fixed;
     }
 
     canvas {
       display: block;
       position: fixed;
       top: 0; left: 0;
-      width: 100vw; height: 100vh;
+      width: 100%; height: 100%;
     }
 
     #ui-overlay {
       position: fixed;
       top: 0; left: 0;
-      width: 100vw; height: 100vh;
+      width: 100%; height: 100%;
       pointer-events: none;
       z-index: 10;
     }
 
     #title-bar {
       position: absolute;
-      top: 20px;
+      top: max(12px, env(safe-area-inset-top, 12px));
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -46,7 +55,7 @@
     }
 
     #title-bar h1 {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 300;
       letter-spacing: 6px;
       text-transform: uppercase;
@@ -55,83 +64,101 @@
     }
 
     #title-bar .subtitle {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 400;
       letter-spacing: 2px;
-      color: rgba(255, 255, 255, 0.4);
-      margin-top: 4px;
+      color: rgba(255, 255, 255, 0.35);
+      margin-top: 3px;
     }
 
     #stats {
       position: absolute;
-      top: 20px;
-      right: 20px;
+      top: max(12px, env(safe-area-inset-top, 12px));
+      right: max(12px, env(safe-area-inset-right, 12px));
       font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: rgba(255, 255, 255, 0.4);
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.35);
       text-align: right;
       pointer-events: none;
+      line-height: 1.5;
     }
 
     #controls {
       position: absolute;
-      bottom: 20px;
+      bottom: max(16px, env(safe-area-inset-bottom, 16px));
       left: 50%;
       transform: translateX(-50%);
       display: flex;
-      gap: 8px;
+      gap: 6px;
       align-items: center;
       pointer-events: auto;
+      padding: 6px 10px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 14px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .btn {
       background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: rgba(255, 255, 255, 0.7);
-      padding: 8px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.65);
+      padding: 10px 14px;
       border-radius: 8px;
       cursor: pointer;
       font-family: 'Inter', sans-serif;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 500;
-      letter-spacing: 0.5px;
-      transition: all 0.2s;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      letter-spacing: 0.3px;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      min-width: 38px;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .btn:hover {
-      background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.15);
       color: #fff;
+    }
+
+    .btn:active {
+      transform: scale(0.95);
     }
 
     .btn.active {
       background: rgba(100, 150, 255, 0.15);
-      border-color: rgba(100, 150, 255, 0.4);
+      border-color: rgba(100, 150, 255, 0.35);
       color: rgba(150, 190, 255, 1);
-    }
-
-    .btn-icon {
-      padding: 8px 10px;
     }
 
     .separator {
       width: 1px;
-      height: 24px;
-      background: rgba(255, 255, 255, 0.1);
+      height: 20px;
+      background: rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
     }
 
     #side-panel {
       position: absolute;
-      top: 60px;
-      left: 20px;
-      width: 240px;
+      top: max(50px, calc(env(safe-area-inset-top, 12px) + 38px));
+      left: max(12px, env(safe-area-inset-left, 12px));
+      width: 220px;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
       pointer-events: auto;
       opacity: 0;
       transform: translateX(-10px);
       transition: all 0.3s ease;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
+
+    #side-panel::-webkit-scrollbar { display: none; }
 
     #side-panel.visible {
       opacity: 1;
@@ -139,48 +166,43 @@
     }
 
     .panel-section {
-      background: rgba(10, 10, 20, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(8, 8, 16, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.05);
       border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 10px;
+      padding: 14px;
+      margin-bottom: 8px;
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
     }
 
     .panel-title {
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 600;
       letter-spacing: 2px;
       text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.3);
-      margin-bottom: 12px;
-    }
-
-    .slider-group {
+      color: rgba(255, 255, 255, 0.25);
       margin-bottom: 10px;
     }
 
-    .slider-group:last-child {
-      margin-bottom: 0;
-    }
+    .slider-group { margin-bottom: 10px; }
+    .slider-group:last-child { margin-bottom: 0; }
 
     .slider-label {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
 
     .slider-label span {
       font-size: 11px;
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(255, 255, 255, 0.45);
     }
 
     .slider-label .value {
       font-family: 'JetBrains Mono', monospace;
       font-size: 10px;
-      color: rgba(100, 150, 255, 0.8);
+      color: rgba(100, 150, 255, 0.7);
     }
 
     input[type="range"] {
@@ -194,8 +216,8 @@
 
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
+      width: 18px;
+      height: 18px;
       background: rgba(100, 150, 255, 0.8);
       border-radius: 50%;
       cursor: pointer;
@@ -203,8 +225,8 @@
     }
 
     input[type="range"]::-moz-range-thumb {
-      width: 14px;
-      height: 14px;
+      width: 18px;
+      height: 18px;
       background: rgba(100, 150, 255, 0.8);
       border-radius: 50%;
       cursor: pointer;
@@ -214,24 +236,25 @@
     .preset-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 6px;
+      gap: 5px;
     }
 
     .preset-btn {
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.06);
-      color: rgba(255, 255, 255, 0.6);
-      padding: 8px 6px;
+      color: rgba(255, 255, 255, 0.55);
+      padding: 10px 6px;
       border-radius: 6px;
       cursor: pointer;
       font-family: 'Inter', sans-serif;
       font-size: 10px;
       font-weight: 500;
       text-align: center;
-      transition: all 0.2s;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .preset-btn:hover {
+    .preset-btn:hover, .preset-btn:active {
       background: rgba(100, 150, 255, 0.1);
       border-color: rgba(100, 150, 255, 0.3);
       color: rgba(150, 190, 255, 1);
@@ -239,14 +262,63 @@
 
     #hint {
       position: absolute;
-      bottom: 64px;
+      bottom: max(76px, calc(env(safe-area-inset-bottom, 16px) + 60px));
       left: 50%;
       transform: translateX(-50%);
       font-size: 11px;
-      color: rgba(255, 255, 255, 0.25);
+      color: rgba(255, 255, 255, 0.2);
       pointer-events: none;
       transition: opacity 1s;
       white-space: nowrap;
+      text-align: center;
+    }
+
+    #body-info {
+      position: absolute;
+      top: max(50px, calc(env(safe-area-inset-top, 12px) + 38px));
+      right: max(12px, env(safe-area-inset-right, 12px));
+      width: 170px;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(-5px);
+      transition: all 0.25s ease;
+    }
+
+    #body-info.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #body-info .panel-section {
+      padding: 12px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      font-size: 10px;
+    }
+
+    .info-row:last-child { margin-bottom: 0; }
+
+    .info-label {
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    .info-value {
+      font-family: 'JetBrains Mono', monospace;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .info-color-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+      vertical-align: middle;
     }
 
     #creation-indicator {
@@ -257,12 +329,13 @@
     }
 
     #creation-indicator .ring {
-      border: 1px solid rgba(100, 150, 255, 0.4);
+      border: 1.5px solid rgba(100, 150, 255, 0.5);
       border-radius: 50%;
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      box-shadow: 0 0 10px rgba(100, 150, 255, 0.2);
     }
 
     #creation-indicator .arrow {
@@ -273,6 +346,34 @@
       background: linear-gradient(90deg, rgba(100, 150, 255, 0.6), rgba(255, 150, 100, 0.6));
       transform-origin: left center;
       border-radius: 1px;
+      display: none;
+    }
+
+    #creation-indicator .mass-label {
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: rgba(100, 150, 255, 0.6);
+      white-space: nowrap;
+    }
+
+    /* Mobile overrides */
+    @media (max-width: 600px) {
+      #title-bar h1 { font-size: 14px; letter-spacing: 4px; }
+      #title-bar .subtitle { font-size: 9px; }
+      #side-panel { width: 190px; }
+      #controls { gap: 4px; padding: 5px 8px; }
+      .btn { padding: 8px 10px; font-size: 12px; min-width: 34px; min-height: 34px; }
+      .separator { height: 16px; }
+      #hint { font-size: 10px; }
+      #body-info { width: 150px; }
+    }
+
+    @media (max-width: 380px) {
+      .desktop-only { display: none; }
     }
   </style>
 </head>
@@ -288,7 +389,6 @@
     <div id="stats">
       <div id="fps-display">60 FPS</div>
       <div id="body-count">0 bodies</div>
-      <div id="energy-display"></div>
     </div>
 
     <div id="side-panel">
@@ -309,31 +409,19 @@
       <div class="panel-section">
         <div class="panel-title">Physics</div>
         <div class="slider-group">
-          <div class="slider-label">
-            <span>Gravity</span>
-            <span class="value" id="gravity-value">1.00</span>
-          </div>
+          <div class="slider-label"><span>Gravity</span><span class="value" id="gravity-value">1.00</span></div>
           <input type="range" id="gravity-slider" min="0" max="3" step="0.01" value="1">
         </div>
         <div class="slider-group">
-          <div class="slider-label">
-            <span>Time Scale</span>
-            <span class="value" id="time-value">1.00</span>
-          </div>
+          <div class="slider-label"><span>Time Scale</span><span class="value" id="time-value">1.00</span></div>
           <input type="range" id="time-slider" min="0" max="5" step="0.01" value="1">
         </div>
         <div class="slider-group">
-          <div class="slider-label">
-            <span>Softening</span>
-            <span class="value" id="softening-value">10</span>
-          </div>
+          <div class="slider-label"><span>Softening</span><span class="value" id="softening-value">10</span></div>
           <input type="range" id="softening-slider" min="1" max="100" step="1" value="10">
         </div>
         <div class="slider-group">
-          <div class="slider-label">
-            <span>Damping</span>
-            <span class="value" id="damping-value">1.000</span>
-          </div>
+          <div class="slider-label"><span>Damping</span><span class="value" id="damping-value">1.000</span></div>
           <input type="range" id="damping-slider" min="0.990" max="1.000" step="0.001" value="1.000">
         </div>
       </div>
@@ -341,43 +429,48 @@
       <div class="panel-section">
         <div class="panel-title">Visuals</div>
         <div class="slider-group">
-          <div class="slider-label">
-            <span>Trail Length</span>
-            <span class="value" id="trail-value">60</span>
-          </div>
-          <input type="range" id="trail-slider" min="0" max="200" step="1" value="60">
+          <div class="slider-label"><span>Trail Length</span><span class="value" id="trail-value">80</span></div>
+          <input type="range" id="trail-slider" min="0" max="200" step="1" value="80">
         </div>
         <div class="slider-group">
-          <div class="slider-label">
-            <span>Bloom</span>
-            <span class="value" id="bloom-value">0.60</span>
-          </div>
-          <input type="range" id="bloom-slider" min="0" max="1" step="0.01" value="0.60">
+          <div class="slider-label"><span>Bloom</span><span class="value" id="bloom-value">0.70</span></div>
+          <input type="range" id="bloom-slider" min="0" max="1" step="0.01" value="0.70">
         </div>
       </div>
     </div>
 
-    <div id="hint">Click & drag to create bodies — Scroll to zoom — Right-drag to pan</div>
+    <div id="body-info">
+      <div class="panel-section">
+        <div class="panel-title"><span class="info-color-dot" id="info-dot"></span>Selected Body</div>
+        <div class="info-row"><span class="info-label">Mass</span><span class="info-value" id="info-mass">-</span></div>
+        <div class="info-row"><span class="info-label">Speed</span><span class="info-value" id="info-speed">-</span></div>
+        <div class="info-row"><span class="info-label">Position</span><span class="info-value" id="info-pos">-</span></div>
+        <div class="info-row"><span class="info-label">Radius</span><span class="info-value" id="info-radius">-</span></div>
+      </div>
+    </div>
+
+    <div id="hint">Tap & drag to create bodies — Pinch to zoom — Two-finger drag to pan</div>
 
     <div id="controls">
-      <button class="btn btn-icon" id="btn-menu" title="Toggle Panel">☰</button>
+      <button class="btn" id="btn-menu" title="Toggle Panel">☰</button>
       <div class="separator"></div>
       <button class="btn" id="btn-play" title="Play/Pause">⏸</button>
-      <button class="btn btn-icon" id="btn-step" title="Step Forward">⏭</button>
+      <button class="btn desktop-only" id="btn-step" title="Step Forward">⏭</button>
       <div class="separator"></div>
-      <button class="btn btn-icon" id="btn-trails" title="Toggle Trails">◌</button>
-      <button class="btn btn-icon" id="btn-vectors" title="Toggle Velocity Vectors">→</button>
+      <button class="btn" id="btn-trails" title="Toggle Trails">◌</button>
+      <button class="btn desktop-only" id="btn-vectors" title="Toggle Velocity Vectors">→</button>
       <div class="separator"></div>
-      <button class="btn btn-icon" id="btn-center" title="Center View">⊙</button>
-      <button class="btn btn-icon" id="btn-follow" title="Follow Heaviest">◎</button>
+      <button class="btn" id="btn-center" title="Center View">⊙</button>
+      <button class="btn" id="btn-follow" title="Follow Heaviest">◎</button>
       <div class="separator"></div>
-      <button class="btn btn-icon" id="btn-clear" title="Clear All">✕</button>
+      <button class="btn" id="btn-clear" title="Clear All">✕</button>
     </div>
   </div>
 
   <div id="creation-indicator">
     <div class="ring" style="width: 30px; height: 30px;"></div>
     <div class="arrow"></div>
+    <div class="mass-label"></div>
   </div>
 
   <script type="module" src="/src/main.ts"></script>

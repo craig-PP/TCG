@@ -11,6 +11,18 @@ export interface Body {
   trailLength: number;
   id: number;
   alive: boolean;
+  age: number;
+}
+
+export interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  maxLife: number;
+  color: [number, number, number];
+  size: number;
 }
 
 export interface Camera {
@@ -20,6 +32,9 @@ export interface Camera {
   targetX: number;
   targetY: number;
   targetZoom: number;
+  shakeX: number;
+  shakeY: number;
+  shakeIntensity: number;
 }
 
 export interface SimConfig {
@@ -37,16 +52,9 @@ export interface SimConfig {
   mergeOnCollision: boolean;
 }
 
-export interface Preset {
-  name: string;
-  bodies: Array<{
-    x: number;
-    y: number;
-    vx: number;
-    vy: number;
-    mass: number;
-    color?: [number, number, number];
-  }>;
-  config?: Partial<SimConfig>;
-  camera?: Partial<Camera>;
+export interface MergeEvent {
+  x: number;
+  y: number;
+  mass: number;
+  color: [number, number, number];
 }
