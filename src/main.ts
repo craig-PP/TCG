@@ -548,6 +548,7 @@ if (isMobile) {
 
 const initial = loadPreset('solar-system');
 bodies = initial.bodies;
+if (initial.config) Object.assign(config, initial.config);
 if (initial.camera) Object.assign(camera, { ...initial.camera, shakeX: 0, shakeY: 0, shakeIntensity: 0 });
 syncSlidersFromConfig();
 requestAnimationFrame(loop);

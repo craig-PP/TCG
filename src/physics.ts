@@ -267,15 +267,20 @@ export function computeOrbitalVelocity(
   centerX: number, centerY: number,
   centerMass: number,
   G: number,
+  softening: number = 0,
 ): { vx: number; vy: number } {
   const dx = x - centerX;
   const dy = y - centerY;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  if (dist < 1) return { vx: 0, vy: 0 };
+  const r = Math.sqrt(dx * dx + dy * dy);
+  if (r < 1) return { vx: 0, vy: 0 };
 
-  const speed = Math.sqrt(G * centerMass / dist);
+  // For softened gravity F = G*M*r / (r²+s²)^(3/2),
+  // circular orbit velocity: v = r * sqrt(G*M) / (r²+s²)^(3/4)
+  const r2s2 = r * r + softening * softening;
+  const speed = r * Math.sqrt(G * centerMass) / Math.pow(r2s2, 0.75);
+
   // Perpendicular velocity (counter-clockwise)
-  const nx = -dy / dist;
-  const ny = dx / dist;
+  const nx = -dy / r;
+  const ny = dx / r;
   return { vx: nx * speed, vy: ny * speed };
 }

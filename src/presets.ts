@@ -27,15 +27,16 @@ function solarSystem(): PresetResult {
   const bodies: Body[] = [];
   const sunMass = 5000;
   const AU = 150;
+  const S = 2; // Softening — must match config below
 
   // Sun
   bodies.push(createBody(0, 0, 0, 0, sunMass, [1.0, 0.82, 0.3]));
 
-  // Helper: add a moon orbiting a parent body at a fixed angle offset
+  // Helper: add a moon with softening-corrected orbital velocity
   function addMoon(parent: Body, dist: number, mass: number, color: [number, number, number], angleOffset: number) {
     const mx = parent.x + Math.cos(angleOffset) * dist;
     const my = parent.y + Math.sin(angleOffset) * dist;
-    const v = computeOrbitalVelocity(mx, my, parent.x, parent.y, parent.mass, G);
+    const v = computeOrbitalVelocity(mx, my, parent.x, parent.y, parent.mass, G, S);
     bodies.push(createBody(mx, my, parent.vx + v.vx, parent.vy + v.vy, mass, color));
   }
 
@@ -59,7 +60,7 @@ function solarSystem(): PresetResult {
     const angle = startAngles[i];
     const x = Math.cos(angle) * dist;
     const y = Math.sin(angle) * dist;
-    const { vx, vy } = computeOrbitalVelocity(x, y, 0, 0, sunMass, G);
+    const { vx, vy } = computeOrbitalVelocity(x, y, 0, 0, sunMass, G, S);
     bodies.push(createBody(x, y, vx, vy, p.mass, p.color));
   }
 
@@ -99,7 +100,7 @@ function solarSystem(): PresetResult {
 
   return {
     bodies,
-    config: { gravity: 1, timeScale: 1, softening: 8, trailLength: 150, mergeOnCollision: false },
+    config: { gravity: 1, timeScale: 1, softening: S, trailLength: 150, mergeOnCollision: false },
     camera: { x: 0, y: 0, zoom: 0.4, targetZoom: 0.4, targetX: 0, targetY: 0 },
   };
 }
