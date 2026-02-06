@@ -98,6 +98,20 @@ function solarSystem(): PresetResult {
   // Neptune — Triton
   addMoon(neptune, 14, 0.08, [0.6, 0.68, 0.75], 2.0);     // Triton — blue-gray
 
+  // Zero out total momentum so the system doesn't drift
+  let totalMomX = 0, totalMomY = 0, totalMass = 0;
+  for (const b of bodies) {
+    totalMomX += b.mass * b.vx;
+    totalMomY += b.mass * b.vy;
+    totalMass += b.mass;
+  }
+  const comVx = totalMomX / totalMass;
+  const comVy = totalMomY / totalMass;
+  for (const b of bodies) {
+    b.vx -= comVx;
+    b.vy -= comVy;
+  }
+
   return {
     bodies,
     config: { gravity: 1, timeScale: 1, softening: S, trailLength: 150, mergeOnCollision: false },
