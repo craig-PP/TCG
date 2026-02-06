@@ -230,7 +230,7 @@ function screenToWorld(sx: number, sy: number): { x: number; y: number } {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   return {
     x: (sx * dpr - canvas.width / 2) / camera.zoom + camera.x,
-    y: (sy * dpr - canvas.height / 2) / camera.zoom + camera.y,
+    y: -(sy * dpr - canvas.height / 2) / camera.zoom + camera.y,
   };
 }
 
@@ -270,7 +270,7 @@ canvas.addEventListener('mousemove', (e) => {
     const dy = (e.clientY - drag.startY) * dpr / camera.zoom;
     drag.movedDistance = Math.sqrt((e.clientX - drag.startX) ** 2 + (e.clientY - drag.startY) ** 2);
     camera.targetX = drag.startWorldX - dx;
-    camera.targetY = drag.startWorldY - dy;
+    camera.targetY = drag.startWorldY + dy;
     if (drag.movedDistance > 5) {
       config.followHeaviest = false;
       btnFollow.classList.remove('active');
@@ -330,7 +330,7 @@ canvas.addEventListener('touchmove', (e) => {
     const dy = (e.touches[0].clientY - drag.startY) * dpr / camera.zoom;
     drag.movedDistance = Math.sqrt((e.touches[0].clientX - drag.startX) ** 2 + (e.touches[0].clientY - drag.startY) ** 2);
     camera.targetX = drag.startWorldX - dx;
-    camera.targetY = drag.startWorldY - dy;
+    camera.targetY = drag.startWorldY + dy;
     if (drag.movedDistance > 10) {
       config.followHeaviest = false;
       btnFollow.classList.remove('active');
@@ -344,7 +344,7 @@ canvas.addEventListener('touchmove', (e) => {
     const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     camera.targetX = drag.startWorldX - (midX - drag.startX) * dpr / camera.zoom;
-    camera.targetY = drag.startWorldY - (midY - drag.startY) * dpr / camera.zoom;
+    camera.targetY = drag.startWorldY + (midY - drag.startY) * dpr / camera.zoom;
   }
 }, { passive: false });
 
