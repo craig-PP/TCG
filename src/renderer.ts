@@ -55,17 +55,17 @@ void main() {
   float core = 1.0 - smoothstep(0.0, 0.28 * pulse, dist);
 
   // Chromatic inner glow
-  float glow1 = exp(-dist * 3.5) * 0.8;
+  float glow1 = exp(-dist * 4.0) * 0.5;
 
   // Soft atmosphere
-  float glow2 = exp(-dist * 1.2) * 0.4;
+  float glow2 = exp(-dist * 1.8) * 0.25;
 
-  // Hot corona for massive bodies
-  float corona = exp(-dist * 0.6) * massScale * 0.25;
+  // Warm corona for massive bodies
+  float corona = exp(-dist * 1.0) * massScale * 0.15;
 
   // Subtle ray pattern for large bodies
   float angle = atan(v_uv.y, v_uv.x);
-  float rays = (sin(angle * 6.0 + u_time) * 0.5 + 0.5) * exp(-dist * 1.5) * massScale * 0.08;
+  float rays = (sin(angle * 6.0 + u_time) * 0.5 + 0.5) * exp(-dist * 2.0) * massScale * 0.06;
 
   float alpha = core + glow1 + glow2 + corona + rays;
 
@@ -74,11 +74,11 @@ void main() {
   alpha *= edgeFade;
   if (alpha < 0.002) discard;
 
-  // Color shifts: core is brighter/whiter, edges pick up body color
-  vec3 coreColor = mix(v_color, vec3(1.0), 0.4) * (core + glow1);
-  vec3 glowColor = v_color * 1.3 * glow2;
-  vec3 coronaColor = vec3(1.0, 0.8, 0.5) * corona;
-  vec3 rayColor = v_color * 1.5 * rays;
+  // Color shifts: core slightly brighter, edges show body color
+  vec3 coreColor = mix(v_color, vec3(1.0), 0.2) * (core + glow1);
+  vec3 glowColor = v_color * 1.2 * glow2;
+  vec3 coronaColor = v_color * 0.8 * corona;
+  vec3 rayColor = v_color * 1.2 * rays;
 
   vec3 color = coreColor + glowColor + coronaColor + rayColor;
 

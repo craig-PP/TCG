@@ -28,7 +28,7 @@ function solarSystem(): PresetResult {
   const sunMass = 5000;
 
   // Sun
-  bodies.push(createBody(0, 0, 0, 0, sunMass, [1.0, 0.95, 0.7]));
+  bodies.push(createBody(0, 0, 0, 0, sunMass, [1.0, 0.82, 0.3]));
 
   // Planets with accurate distance ratios (1 AU = 150 world units)
   // Masses exaggerated for visibility but preserve ordering
