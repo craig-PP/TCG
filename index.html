@@ -84,8 +84,8 @@
     }
 
     #controls {
-      position: absolute;
-      bottom: max(16px, env(safe-area-inset-bottom, 16px));
+      position: fixed;
+      bottom: max(12px, env(safe-area-inset-bottom, 12px));
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -93,11 +93,12 @@
       align-items: center;
       pointer-events: auto;
       padding: 6px 10px;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.6);
       border-radius: 14px;
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      z-index: 100;
     }
 
     .btn {
@@ -387,7 +388,7 @@
       .desktop-only { display: none; }
     }
   </style>
-  <script type="module" crossorigin src="./assets/index-CYj0jcAR.js"></script>
+  <script type="module" crossorigin src="./assets/index-DCIqDBBf.js"></script>
 </head>
 <body>
   <canvas id="cosmos"></canvas>
