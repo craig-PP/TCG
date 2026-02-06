@@ -361,6 +361,15 @@
       white-space: nowrap;
     }
 
+    #speed-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: rgba(150, 190, 255, 0.9);
+      min-width: 36px;
+      text-align: center;
+      pointer-events: none;
+    }
+
     /* Mobile overrides */
 
     @media (max-width: 600px) {
@@ -378,7 +387,7 @@
       .desktop-only { display: none; }
     }
   </style>
-  <script type="module" crossorigin src="./assets/index-Bm3v3KnG.js"></script>
+  <script type="module" crossorigin src="./assets/index-DQaEVyuY.js"></script>
 </head>
 <body>
   <canvas id="cosmos"></canvas>
@@ -452,28 +461,21 @@
       </div>
     </div>
 
-    <div id="hint">Tap & drag to create bodies — Pinch to zoom — Two-finger drag to pan</div>
+    <div id="hint">Scroll to zoom — Drag to pan — Click a planet to select</div>
 
     <div id="controls">
       <button class="btn" id="btn-menu" title="Toggle Panel">☰</button>
       <div class="separator"></div>
       <button class="btn" id="btn-play" title="Play/Pause">⏸</button>
-      <button class="btn desktop-only" id="btn-step" title="Step Forward">⏭</button>
+      <div class="separator"></div>
+      <button class="btn" id="btn-slow" title="Slow Down">&#x23EA;</button>
+      <span id="speed-display">1x</span>
+      <button class="btn" id="btn-fast" title="Speed Up">&#x23E9;</button>
       <div class="separator"></div>
       <button class="btn" id="btn-trails" title="Toggle Trails">◌</button>
-      <button class="btn desktop-only" id="btn-vectors" title="Toggle Velocity Vectors">→</button>
-      <div class="separator"></div>
       <button class="btn" id="btn-center" title="Center View">⊙</button>
       <button class="btn" id="btn-follow" title="Follow Heaviest">◎</button>
-      <div class="separator"></div>
-      <button class="btn" id="btn-clear" title="Clear All">✕</button>
     </div>
-  </div>
-
-  <div id="creation-indicator">
-    <div class="ring" style="width: 30px; height: 30px;"></div>
-    <div class="arrow"></div>
-    <div class="mass-label"></div>
   </div>
 
 </body>
