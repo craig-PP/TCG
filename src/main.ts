@@ -29,8 +29,8 @@ const config: SimConfig = {
   showVectors: false,
   paused: false,
   followHeaviest: false,
-  collisions: true,
-  mergeOnCollision: true,
+  collisions: false,
+  mergeOnCollision: false,
 };
 
 const canvas = document.getElementById('cosmos') as HTMLCanvasElement;
@@ -184,7 +184,7 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
     selectedBody = null;
     if (result.config) {
       Object.assign(config, result.config);
-      if (result.config.mergeOnCollision === undefined) config.mergeOnCollision = true;
+      if (result.config.mergeOnCollision === undefined) config.mergeOnCollision = false;
       syncSlidersFromConfig();
     }
     if (result.camera) {

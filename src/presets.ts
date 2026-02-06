@@ -25,43 +25,57 @@ export function loadPreset(name: string): PresetResult {
 
 function solarSystem(): PresetResult {
   const bodies: Body[] = [];
+  const sunMass = 5000;
 
   // Sun
-  bodies.push(createBody(0, 0, 0, 0, 5000, [1.0, 0.95, 0.6]));
+  bodies.push(createBody(0, 0, 0, 0, sunMass, [1.0, 0.95, 0.7]));
 
-  // Planets with realistic(ish) orbital velocities
-  const planets: Array<{ dist: number; mass: number; color: [number, number, number]; name: string }> = [
-    { dist: 80, mass: 2, color: [0.7, 0.7, 0.7], name: 'Mercury' },
-    { dist: 130, mass: 5, color: [1.0, 0.85, 0.5], name: 'Venus' },
-    { dist: 180, mass: 6, color: [0.3, 0.6, 1.0], name: 'Earth' },
-    { dist: 250, mass: 4, color: [1.0, 0.4, 0.2], name: 'Mars' },
-    { dist: 400, mass: 100, color: [1.0, 0.8, 0.5], name: 'Jupiter' },
-    { dist: 550, mass: 60, color: [0.9, 0.8, 0.5], name: 'Saturn' },
-    { dist: 700, mass: 30, color: [0.5, 0.8, 0.9], name: 'Uranus' },
-    { dist: 850, mass: 28, color: [0.3, 0.4, 0.9], name: 'Neptune' },
+  // Planets with accurate distance ratios (1 AU = 150 world units)
+  // Masses exaggerated for visibility but preserve ordering
+  const AU = 150;
+  const planets: Array<{ au: number; mass: number; color: [number, number, number] }> = [
+    { au: 0.387, mass: 0.8,  color: [0.6, 0.6, 0.6] },   // Mercury — gray
+    { au: 0.723, mass: 3,    color: [0.9, 0.8, 0.55] },   // Venus — pale yellow
+    { au: 1.0,   mass: 3,    color: [0.2, 0.5, 1.0] },    // Earth — blue
+    { au: 1.524, mass: 1.5,  color: [0.85, 0.35, 0.15] }, // Mars — red-orange
+    { au: 5.203, mass: 120,  color: [0.85, 0.7, 0.45] },  // Jupiter — tan
+    { au: 9.537, mass: 70,   color: [0.85, 0.75, 0.5] },  // Saturn — golden
+    { au: 19.19, mass: 20,   color: [0.5, 0.8, 0.9] },    // Uranus — ice blue
+    { au: 30.07, mass: 22,   color: [0.25, 0.35, 0.85] }, // Neptune — deep blue
   ];
 
-  for (const p of planets) {
-    const { vx, vy } = computeOrbitalVelocity(p.dist, 0, 0, 0, 5000, G);
-    bodies.push(createBody(p.dist, 0, vx, vy, p.mass, p.color));
+  // Spread planets at different starting angles for visual interest
+  const startAngles = [0, 0.8, 2.1, 3.5, 1.2, 4.1, 5.5, 0.5];
+
+  for (let i = 0; i < planets.length; i++) {
+    const p = planets[i];
+    const dist = p.au * AU;
+    const angle = startAngles[i];
+    const x = Math.cos(angle) * dist;
+    const y = Math.sin(angle) * dist;
+    const { vx, vy } = computeOrbitalVelocity(x, y, 0, 0, sunMass, G);
+    bodies.push(createBody(x, y, vx, vy, p.mass, p.color));
   }
 
   // Earth's moon
-  const earthX = 180;
-  const moonDist = 15;
-  const earthOrbVel = computeOrbitalVelocity(earthX, 0, 0, 0, 5000, G);
-  const moonOrbVel = computeOrbitalVelocity(earthX + moonDist, 0, earthX, 0, 6, G);
+  const earthIdx = 3; // Earth is index 3 (0=sun, 1=merc, 2=venus, 3=earth)
+  const earth = bodies[earthIdx];
+  const moonDist = 8;
+  const moonAngle = startAngles[2] + 0.1; // Slightly offset from Earth
+  const moonX = earth.x + Math.cos(moonAngle) * moonDist;
+  const moonY = earth.y + Math.sin(moonAngle) * moonDist;
+  const moonOrbVel = computeOrbitalVelocity(moonX, moonY, earth.x, earth.y, 3, G);
   bodies.push(createBody(
-    earthX + moonDist, 0,
-    earthOrbVel.vx + moonOrbVel.vx,
-    earthOrbVel.vy + moonOrbVel.vy,
-    0.3, [0.8, 0.8, 0.8],
+    moonX, moonY,
+    earth.vx + moonOrbVel.vx,
+    earth.vy + moonOrbVel.vy,
+    0.15, [0.75, 0.75, 0.75],
   ));
 
   return {
     bodies,
-    config: { gravity: 1, timeScale: 1, softening: 5 },
-    camera: { x: 0, y: 0, zoom: 0.7, targetZoom: 0.7, targetX: 0, targetY: 0 },
+    config: { gravity: 1, timeScale: 1, softening: 3, trailLength: 150, mergeOnCollision: false },
+    camera: { x: 0, y: 0, zoom: 0.4, targetZoom: 0.4, targetX: 0, targetY: 0 },
   };
 }
 

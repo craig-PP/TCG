@@ -69,6 +69,11 @@ void main() {
 
   float alpha = core + glow1 + glow2 + corona + rays;
 
+  // Smooth edge fade to eliminate visible quad boundary
+  float edgeFade = 1.0 - smoothstep(0.85, 1.35, dist);
+  alpha *= edgeFade;
+  if (alpha < 0.002) discard;
+
   // Color shifts: core is brighter/whiter, edges pick up body color
   vec3 coreColor = mix(v_color, vec3(1.0), 0.4) * (core + glow1);
   vec3 glowColor = v_color * 1.3 * glow2;
