@@ -33,15 +33,17 @@ function solarSystem(): PresetResult {
   // Planets with accurate distance ratios (1 AU = 150 world units)
   // Masses exaggerated for visibility but preserve ordering
   const AU = 150;
+  // Masses kept small relative to sun (5000) to prevent inter-planet perturbation
+  // Real Jupiter is 0.1% of sun; here ~0.4% — close enough for stable orbits
   const planets: Array<{ au: number; mass: number; color: [number, number, number] }> = [
-    { au: 0.387, mass: 0.8,  color: [0.6, 0.6, 0.6] },   // Mercury — gray
-    { au: 0.723, mass: 3,    color: [0.9, 0.8, 0.55] },   // Venus — pale yellow
-    { au: 1.0,   mass: 3,    color: [0.2, 0.5, 1.0] },    // Earth — blue
-    { au: 1.524, mass: 1.5,  color: [0.85, 0.35, 0.15] }, // Mars — red-orange
-    { au: 5.203, mass: 120,  color: [0.85, 0.7, 0.45] },  // Jupiter — tan
-    { au: 9.537, mass: 70,   color: [0.85, 0.75, 0.5] },  // Saturn — golden
-    { au: 19.19, mass: 20,   color: [0.5, 0.8, 0.9] },    // Uranus — ice blue
-    { au: 30.07, mass: 22,   color: [0.25, 0.35, 0.85] }, // Neptune — deep blue
+    { au: 0.387, mass: 0.4,  color: [0.6, 0.6, 0.6] },   // Mercury — gray
+    { au: 0.723, mass: 1.2,  color: [0.9, 0.8, 0.55] },   // Venus — pale yellow
+    { au: 1.0,   mass: 1.5,  color: [0.2, 0.5, 1.0] },    // Earth — blue
+    { au: 1.524, mass: 0.6,  color: [0.85, 0.35, 0.15] }, // Mars — red-orange
+    { au: 5.203, mass: 18,   color: [0.85, 0.7, 0.45] },  // Jupiter — tan
+    { au: 9.537, mass: 10,   color: [0.85, 0.75, 0.5] },  // Saturn — golden
+    { au: 19.19, mass: 4,    color: [0.5, 0.8, 0.9] },    // Uranus — ice blue
+    { au: 30.07, mass: 4.5,  color: [0.25, 0.35, 0.85] }, // Neptune — deep blue
   ];
 
   // Spread planets at different starting angles for visual interest
@@ -64,7 +66,7 @@ function solarSystem(): PresetResult {
   const moonAngle = startAngles[2] + 0.1; // Slightly offset from Earth
   const moonX = earth.x + Math.cos(moonAngle) * moonDist;
   const moonY = earth.y + Math.sin(moonAngle) * moonDist;
-  const moonOrbVel = computeOrbitalVelocity(moonX, moonY, earth.x, earth.y, 3, G);
+  const moonOrbVel = computeOrbitalVelocity(moonX, moonY, earth.x, earth.y, 1.5, G);
   bodies.push(createBody(
     moonX, moonY,
     earth.vx + moonOrbVel.vx,
@@ -74,7 +76,7 @@ function solarSystem(): PresetResult {
 
   return {
     bodies,
-    config: { gravity: 1, timeScale: 1, softening: 3, trailLength: 150, mergeOnCollision: false },
+    config: { gravity: 1, timeScale: 1, softening: 8, trailLength: 150, mergeOnCollision: false },
     camera: { x: 0, y: 0, zoom: 0.4, targetZoom: 0.4, targetX: 0, targetY: 0 },
   };
 }
