@@ -27,7 +27,7 @@ function solarSystem(): PresetResult {
   const bodies: Body[] = [];
   const sunMass = 5000;
   const AU = 150;
-  const S = 2; // Softening — must match config below
+  const S = 1; // Softening — must match config below
 
   // Sun
   bodies.push(createBody(0, 0, 0, 0, sunMass, [1.0, 0.82, 0.3]));
@@ -40,16 +40,16 @@ function solarSystem(): PresetResult {
     bodies.push(createBody(mx, my, parent.vx + v.vx, parent.vy + v.vy, mass, color));
   }
 
-  // Planet data: accurate AU ratios, masses small relative to sun for stability
+  // Planet masses boosted for visible moon orbits (larger Hill spheres)
   const planets: Array<{ au: number; mass: number; color: [number, number, number] }> = [
-    { au: 0.387, mass: 0.4,  color: [0.55, 0.55, 0.55] }, // Mercury — gray rock
-    { au: 0.723, mass: 1.2,  color: [0.85, 0.75, 0.45] }, // Venus — pale ochre
-    { au: 1.0,   mass: 1.5,  color: [0.15, 0.45, 1.0] },  // Earth — vivid blue
-    { au: 1.524, mass: 0.6,  color: [0.9, 0.3, 0.1] },    // Mars — rust red
-    { au: 5.203, mass: 18,   color: [0.8, 0.65, 0.4] },   // Jupiter — banded tan
-    { au: 9.537, mass: 10,   color: [0.82, 0.72, 0.45] },  // Saturn — golden
-    { au: 19.19, mass: 4,    color: [0.45, 0.78, 0.88] },  // Uranus — ice blue
-    { au: 30.07, mass: 4.5,  color: [0.2, 0.3, 0.85] },   // Neptune — deep blue
+    { au: 0.387, mass: 1,    color: [0.55, 0.55, 0.55] }, // Mercury — gray rock
+    { au: 0.723, mass: 3,    color: [0.85, 0.75, 0.45] }, // Venus — pale ochre
+    { au: 1.0,   mass: 6,    color: [0.15, 0.45, 1.0] },  // Earth — vivid blue
+    { au: 1.524, mass: 2.5,  color: [0.9, 0.3, 0.1] },    // Mars — rust red
+    { au: 5.203, mass: 40,   color: [0.8, 0.65, 0.4] },   // Jupiter — banded tan
+    { au: 9.537, mass: 25,   color: [0.82, 0.72, 0.45] },  // Saturn — golden
+    { au: 19.19, mass: 12,   color: [0.45, 0.78, 0.88] },  // Uranus — ice blue
+    { au: 30.07, mass: 15,   color: [0.2, 0.3, 0.85] },   // Neptune — deep blue
   ];
 
   const startAngles = [0, 0.8, 2.1, 3.5, 1.2, 4.1, 5.5, 0.5];
@@ -74,29 +74,29 @@ function solarSystem(): PresetResult {
   const uranus = bodies[7];
   const neptune = bodies[8];
 
-  // Earth — Moon
-  addMoon(earth, 5, 0.12, [0.75, 0.75, 0.75], 0.4);
+  // Earth — Moon (Hill sphere ~11, glow extent ~7)
+  addMoon(earth, 8, 0.5, [0.75, 0.75, 0.75], 0.4);
 
-  // Mars — Phobos, Deimos
-  addMoon(mars, 3, 0.02, [0.5, 0.45, 0.4], 0);
-  addMoon(mars, 5, 0.01, [0.5, 0.45, 0.4], 2.5);
+  // Mars — Phobos, Deimos (Hill sphere ~13)
+  addMoon(mars, 6, 0.15, [0.5, 0.45, 0.4], 0);
+  addMoon(mars, 10, 0.1, [0.5, 0.45, 0.4], 2.5);
 
-  // Jupiter — Galilean moons: Io, Europa, Ganymede, Callisto
-  addMoon(jupiter, 12, 0.15, [0.9, 0.8, 0.3],  0);       // Io — sulfur yellow
-  addMoon(jupiter, 18, 0.10, [0.8, 0.78, 0.7],  1.5);     // Europa — pale ice
-  addMoon(jupiter, 25, 0.18, [0.55, 0.5, 0.45], 3.0);     // Ganymede — gray-brown
-  addMoon(jupiter, 38, 0.12, [0.4, 0.35, 0.3],  4.5);     // Callisto — dark brown
+  // Jupiter — Galilean moons (Hill sphere ~109)
+  addMoon(jupiter, 20, 0.8, [0.9, 0.8, 0.3],  0);        // Io — sulfur yellow
+  addMoon(jupiter, 30, 0.6, [0.8, 0.78, 0.7],  1.5);      // Europa — pale ice
+  addMoon(jupiter, 42, 1.0, [0.55, 0.5, 0.45], 3.0);      // Ganymede — gray-brown
+  addMoon(jupiter, 58, 0.7, [0.4, 0.35, 0.3],  4.5);      // Callisto — dark brown
 
-  // Saturn — Titan, Enceladus
-  addMoon(saturn, 18, 0.15, [0.75, 0.6, 0.25], 0.8);      // Titan — orange haze
-  addMoon(saturn, 8,  0.03, [0.9, 0.93, 1.0],  3.2);      // Enceladus — bright ice
+  // Saturn — Titan, Enceladus (Hill sphere ~169)
+  addMoon(saturn, 28, 0.8, [0.75, 0.6, 0.25], 0.8);       // Titan — orange haze
+  addMoon(saturn, 15, 0.3, [0.9, 0.93, 1.0],  3.2);       // Enceladus — bright ice
 
-  // Uranus — Titania, Oberon
-  addMoon(uranus, 12, 0.06, [0.6, 0.65, 0.7], 1.0);       // Titania — gray-blue
-  addMoon(uranus, 18, 0.05, [0.5, 0.48, 0.47], 3.8);      // Oberon — dark gray
+  // Uranus — Titania, Oberon (Hill sphere ~268)
+  addMoon(uranus, 20, 0.4, [0.6, 0.65, 0.7], 1.0);        // Titania — gray-blue
+  addMoon(uranus, 32, 0.35, [0.5, 0.48, 0.47], 3.8);      // Oberon — dark gray
 
-  // Neptune — Triton
-  addMoon(neptune, 14, 0.08, [0.6, 0.68, 0.75], 2.0);     // Triton — blue-gray
+  // Neptune — Triton (Hill sphere ~451)
+  addMoon(neptune, 25, 0.5, [0.6, 0.68, 0.75], 2.0);      // Triton — blue-gray
 
   // Zero out total momentum so the system doesn't drift
   let totalMomX = 0, totalMomY = 0, totalMass = 0;
@@ -115,7 +115,7 @@ function solarSystem(): PresetResult {
   return {
     bodies,
     config: { gravity: 1, timeScale: 1, softening: S, trailLength: 150, mergeOnCollision: false },
-    camera: { x: 0, y: 0, zoom: 0.4, targetZoom: 0.4, targetX: 0, targetY: 0 },
+    camera: { x: 0, y: 0, zoom: 0.35, targetZoom: 0.35, targetX: 0, targetY: 0 },
   };
 }
 

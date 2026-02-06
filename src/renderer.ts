@@ -24,7 +24,12 @@ out vec3 v_color;
 out float v_mass;
 
 void main() {
-  vec2 worldPos = a_center + a_position * a_radius * 3.5;
+  // Mass-dependent quad scale: sun gets big glow, planets/moons stay compact
+  float quadScale = 1.5 + 2.0 * clamp(log(a_mass + 1.0) / 9.0, 0.0, 1.0);
+  float worldRadius = a_radius * quadScale;
+  // Ensure every body is at least 2 pixels on screen
+  float minWorldRadius = 2.0 / u_zoom;
+  vec2 worldPos = a_center + a_position * max(worldRadius, minWorldRadius);
   vec2 screenPos = (worldPos - u_camera) * u_zoom;
   vec2 clipPos = screenPos / u_resolution * 2.0;
   gl_Position = vec4(clipPos, 0.0, 1.0);
