@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cosmos — N-Body Gravitational Simulator</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌌</text></svg>">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: #e0e0e0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+    }
+
+    #ui-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    #title-bar {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+      opacity: 0.7;
+      transition: opacity 0.4s;
+    }
+
+    #title-bar h1 {
+      font-size: 18px;
+      font-weight: 300;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      color: #fff;
+      text-shadow: 0 0 20px rgba(100, 150, 255, 0.5);
+    }
+
+    #title-bar .subtitle {
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 2px;
+      color: rgba(255, 255, 255, 0.4);
+      margin-top: 4px;
+    }
+
+    #stats {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.4);
+      text-align: right;
+      pointer-events: none;
+    }
+
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      pointer-events: auto;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.7);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      transition: all 0.2s;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    .btn.active {
+      background: rgba(100, 150, 255, 0.15);
+      border-color: rgba(100, 150, 255, 0.4);
+      color: rgba(150, 190, 255, 1);
+    }
+
+    .btn-icon {
+      padding: 8px 10px;
+    }
+
+    .separator {
+      width: 1px;
+      height: 24px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    #side-panel {
+      position: absolute;
+      top: 60px;
+      left: 20px;
+      width: 240px;
+      pointer-events: auto;
+      opacity: 0;
+      transform: translateX(-10px);
+      transition: all 0.3s ease;
+    }
+
+    #side-panel.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .panel-section {
+      background: rgba(10, 10, 20, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 10px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .panel-title {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.3);
+      margin-bottom: 12px;
+    }
+
+    .slider-group {
+      margin-bottom: 10px;
+    }
+
+    .slider-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .slider-label span {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .slider-label .value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: rgba(100, 150, 255, 0.8);
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: rgba(100, 150, 255, 0.8);
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid rgba(0, 0, 0, 0.3);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      background: rgba(100, 150, 255, 0.8);
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid rgba(0, 0, 0, 0.3);
+    }
+
+    .preset-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .preset-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.6);
+      padding: 8px 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .preset-btn:hover {
+      background: rgba(100, 150, 255, 0.1);
+      border-color: rgba(100, 150, 255, 0.3);
+      color: rgba(150, 190, 255, 1);
+    }
+
+    #hint {
+      position: absolute;
+      bottom: 64px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.25);
+      pointer-events: none;
+      transition: opacity 1s;
+      white-space: nowrap;
+    }
+
+    #creation-indicator {
+      position: fixed;
+      pointer-events: none;
+      z-index: 5;
+      display: none;
+    }
+
+    #creation-indicator .ring {
+      border: 1px solid rgba(100, 150, 255, 0.4);
+      border-radius: 50%;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #creation-indicator .arrow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(100, 150, 255, 0.6), rgba(255, 150, 100, 0.6));
+      transform-origin: left center;
+      border-radius: 1px;
+    }
+  </style>
+  <script type="module" crossorigin src="./assets/index-DcdQeDWg.js"></script>
+</head>
+<body>
+  <canvas id="cosmos"></canvas>
+
+  <div id="ui-overlay">
+    <div id="title-bar">
+      <h1>Cosmos</h1>
+      <div class="subtitle">Gravitational N-Body Simulator</div>
+    </div>
+
+    <div id="stats">
+      <div id="fps-display">60 FPS</div>
+      <div id="body-count">0 bodies</div>
+      <div id="energy-display"></div>
+    </div>
+
+    <div id="side-panel">
+      <div class="panel-section">
+        <div class="panel-title">Scenarios</div>
+        <div class="preset-grid">
+          <button class="preset-btn" data-preset="solar-system">Solar System</button>
+          <button class="preset-btn" data-preset="binary-stars">Binary Stars</button>
+          <button class="preset-btn" data-preset="galaxy">Galaxy</button>
+          <button class="preset-btn" data-preset="collision">Collision</button>
+          <button class="preset-btn" data-preset="asteroid-belt">Asteroid Belt</button>
+          <button class="preset-btn" data-preset="figure-eight">Figure Eight</button>
+          <button class="preset-btn" data-preset="random">Random</button>
+          <button class="preset-btn" data-preset="lagrange">Lagrange Pts</button>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-title">Physics</div>
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Gravity</span>
+            <span class="value" id="gravity-value">1.00</span>
+          </div>
+          <input type="range" id="gravity-slider" min="0" max="3" step="0.01" value="1">
+        </div>
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Time Scale</span>
+            <span class="value" id="time-value">1.00</span>
+          </div>
+          <input type="range" id="time-slider" min="0" max="5" step="0.01" value="1">
+        </div>
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Softening</span>
+            <span class="value" id="softening-value">10</span>
+          </div>
+          <input type="range" id="softening-slider" min="1" max="100" step="1" value="10">
+        </div>
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Damping</span>
+            <span class="value" id="damping-value">1.000</span>
+          </div>
+          <input type="range" id="damping-slider" min="0.990" max="1.000" step="0.001" value="1.000">
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-title">Visuals</div>
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Trail Length</span>
+            <span class="value" id="trail-value">60</span>
+          </div>
+          <input type="range" id="trail-slider" min="0" max="200" step="1" value="60">
+        </div>
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Bloom</span>
+            <span class="value" id="bloom-value">0.60</span>
+          </div>
+          <input type="range" id="bloom-slider" min="0" max="1" step="0.01" value="0.60">
+        </div>
+      </div>
+    </div>
+
+    <div id="hint">Click & drag to create bodies — Scroll to zoom — Right-drag to pan</div>
+
+    <div id="controls">
+      <button class="btn btn-icon" id="btn-menu" title="Toggle Panel">☰</button>
+      <div class="separator"></div>
+      <button class="btn" id="btn-play" title="Play/Pause">⏸</button>
+      <button class="btn btn-icon" id="btn-step" title="Step Forward">⏭</button>
+      <div class="separator"></div>
+      <button class="btn btn-icon" id="btn-trails" title="Toggle Trails">◌</button>
+      <button class="btn btn-icon" id="btn-vectors" title="Toggle Velocity Vectors">→</button>
+      <div class="separator"></div>
+      <button class="btn btn-icon" id="btn-center" title="Center View">⊙</button>
+      <button class="btn btn-icon" id="btn-follow" title="Follow Heaviest">◎</button>
+      <div class="separator"></div>
+      <button class="btn btn-icon" id="btn-clear" title="Clear All">✕</button>
+    </div>
+  </div>
+
+  <div id="creation-indicator">
+    <div class="ring" style="width: 30px; height: 30px;"></div>
+    <div class="arrow"></div>
+  </div>
+
+</body>
+</html>
