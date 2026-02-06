@@ -55,13 +55,13 @@ void main() {
   float core = 1.0 - smoothstep(0.0, 0.28 * pulse, dist);
 
   // Chromatic inner glow
-  float glow1 = exp(-dist * 4.0) * 0.5;
+  float glow1 = exp(-dist * 5.0) * 0.35;
 
   // Soft atmosphere
-  float glow2 = exp(-dist * 1.8) * 0.25;
+  float glow2 = exp(-dist * 2.5) * 0.18;
 
   // Warm corona for massive bodies
-  float corona = exp(-dist * 1.0) * massScale * 0.15;
+  float corona = exp(-dist * 1.5) * massScale * 0.1;
 
   // Subtle ray pattern for large bodies
   float angle = atan(v_uv.y, v_uv.x);
